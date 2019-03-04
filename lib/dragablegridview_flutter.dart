@@ -58,6 +58,7 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
     extends State<DragAbleGridView> with SingleTickerProviderStateMixin {
   final _userScrollable = const ScrollPhysics();
   final _disableUserScroll = const NeverScrollableScrollPhysics();
+  final dragContainerKey = GlobalKey<_PlaceholderItemState>();
 
   var scrollPhysics;
 
@@ -206,7 +207,7 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
           int dragPosition = itemPositions[startPosition];
           itemPositions.removeAt(startPosition);
           itemPositions.insert(endPosition, dragPosition);
-          //���������指未抬起来（可能会继续拖动�����，这时候end的位置等于Start的位置
+          //�����������指未抬起来（可能会继续拖动�����，这时候end的位置等于Start的位置
           startPosition = endPosition;
         }
       } else if (animationStatus == AnimationStatus.forward) {}
@@ -275,113 +276,122 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
     screenHeight = screenSize.height;
   }
 
-  ///自定义长按事件，只有长按800毫秒 才能触发拖动
-  void _handLongPress(int index) async {
-    await Future.delayed(new Duration(milliseconds: widget.longPressDuration));
-    if (widget.itemBins[index].isLongPress) {
-      setState(() {
-        widget.itemBins[index].dragAble = true;
-        startPosition = index;
-        if (widget.editChangeListener != null &&
-            isHideDeleteIcon == true &&
-            widget.deleteIcon != null) {
-          widget.editChangeListener();
-        }
-        if (widget.deleteIcon != null) {
-          isHideDeleteIcon = false;
-        }
-      });
-    }
-  }
+  // ///自定义长按事件，只有长按800毫秒 才能触发拖动
+  // void _handLongPress(int index) async {
+  //   await Future.delayed(new Duration(milliseconds: widget.longPressDuration));
+  //   if (widget.itemBins[index].isLongPress) {
+  //     setState(() {
+  //       widget.itemBins[index].dragAble = true;
+  //       startPosition = index;
+  //       if (widget.editChangeListener != null &&
+  //           isHideDeleteIcon == true &&
+  //           widget.deleteIcon != null) {
+  //         widget.editChangeListener();
+  //       }
+  //       if (widget.deleteIcon != null) {
+  //         isHideDeleteIcon = false;
+  //       }
+  //     });
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
     return new NotificationListener(
         onNotification: (onNotifications) {},
-        child: new GridView.builder(
-            physics: scrollPhysics,
-            scrollDirection: Axis.vertical,
-            controller: scrollController,
-            itemCount: widget.itemBins.length,
-            gridDelegate: new SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: widget.crossAxisCount,
-                childAspectRatio: widget.childAspectRatio,
-                crossAxisSpacing: widget.crossAxisSpacing,
-                mainAxisSpacing: widget.mainAxisSpacing),
-            itemBuilder: (BuildContext contexts, int index) {
-              return new GestureDetector(
-                // onTapDown: widget.isOpenDragAble
-                //     ? (detail) {
-                //         print('onTapDown');
-                //         handleOnTapDownEvent(index, detail);
-                //       }
-                //     : null,
-                // onPanUpdate: widget.isOpenDragAble
-                //     ? (updateDetail) {
-                //         print('onPanUpdate');
+        child: Stack(
+          children: <Widget>[
+            GridView.builder(
+                physics: scrollPhysics,
+                scrollDirection: Axis.vertical,
+                controller: scrollController,
+                itemCount: widget.itemBins.length,
+                gridDelegate: new SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: widget.crossAxisCount,
+                    childAspectRatio: widget.childAspectRatio,
+                    crossAxisSpacing: widget.crossAxisSpacing,
+                    mainAxisSpacing: widget.mainAxisSpacing),
+                itemBuilder: (BuildContext contexts, int index) {
+                  return new GestureDetector(
+                    // onTapDown: widget.isOpenDragAble
+                    //     ? (detail) {
+                    //         print('onTapDown');
+                    //         handleOnTapDownEvent(index, detail);
+                    //       }
+                    //     : null,
+                    // onPanUpdate: widget.isOpenDragAble
+                    //     ? (updateDetail) {
+                    //         print('onPanUpdate');
 
-                //         handleOnPanUpdateEvent(index, updateDetail);
-                //       }
-                //     : null,
-                // onPanEnd: widget.isOpenDragAble
-                //     ? (upDetail) {
-                //         print('onPanEnd');
+                    //         handleOnPanUpdateEvent(index, updateDetail);
+                    //       }
+                    //     : null,
+                    // onPanEnd: widget.isOpenDragAble
+                    //     ? (upDetail) {
+                    //         print('onPanEnd');
 
-                //         handleOnPanEndEvent(index);
-                //       }
-                //     : null,
-                // onTapUp: widget.isOpenDragAble
-                //     ? (tapUpDetails) {
-                //         print('onTapUp');
-                //         handleOnTapUp(index);
-                //       }
-                //     : null,
-                // onTapCancel: widget.isOpenDragAble
-                //     ? () {
-                //         print('onTapCancel');
-                //       }
-                //     : null,
-                // onLongPress: () {
-                //   print('onLongPress');
-                // },
-                onLongPressDragStart: (details) {
-                  print('onLongPressDragStart');
-                  handleOnLongDownEvent(index, details);
-                },
+                    //         handleOnPanEndEvent(index);
+                    //       }
+                    //     : null,
+                    // onTapUp: widget.isOpenDragAble
+                    //     ? (tapUpDetails) {
+                    //         print('onTapUp');
+                    //         handleOnTapUp(index);
+                    //       }
+                    //     : null,
+                    // onTapCancel: widget.isOpenDragAble
+                    //     ? () {
+                    //         print('onTapCancel');
+                    //       }
+                    //     : null,
+                    // onLongPress: () {
+                    //   print('onLongPress');
+                    // },
+                    onLongPressDragStart: (details) {
+                      print('onLongPressDragStart');
+                      handleOnLongDownEvent(index, details);
+                    },
 
-                onLongPressDragUpdate: (details) {
-                  print('onLongPressDragUpdate');
-                  handleOnLongPressDragUpdate(index, details);
-                },
-                onLongPressDragUp: (details) {
-                  print('onLongPressDragUpdate');
-                  handleOnPanEndEvent(index);
-                },
+                    onLongPressDragUpdate: (details) {
+                      print('onLongPressDragUpdate');
+                      handleOnLongPressDragUpdate(index, details);
+                    },
+                    onLongPressDragUp: (details) {
+                      print('onLongPressDragUpdate');
+                      handleOnPanEndEvent(index);
+                      dragContainerKey.currentState.item = null;
+                    },
 
-                child: new Offstage(
-                  offstage: widget.itemBins[index].offstage,
-                  child: new Container(
-                    alignment: Alignment.center,
-                    //color: Colors.grey,
-                    key: widget.itemBins[index].containerKey,
-                    child: new OverflowBox(
-                        maxWidth: screenWidth,
-                        maxHeight: screenHeight,
-                        alignment: Alignment.center,
-                        child: new Center(
-                          child: new Container(
-                            key: widget.itemBins[index].containerKeyChild,
-                            transform: new Matrix4.translationValues(
-                                widget.itemBins[index].dragPointX,
-                                widget.itemBins[index].dragPointY,
-                                (widget.itemBins[index].dragPointX != 0 || widget.itemBins[index].dragPointX != 0) ? 1.0: 0.0),
-                            child: widget.child(index),
-                          ),
-                        )),
-                  ),
-                ),
-              );
-            }));
+                    child: new Container(
+                      alignment: Alignment.center,
+                      //color: Colors.grey,
+                      key: widget.itemBins[index].containerKey,
+                      child: new OverflowBox(
+                          maxWidth: screenWidth,
+                          maxHeight: screenHeight,
+                          alignment: Alignment.center,
+                          child: new Center(
+                            child: new Container(
+                              key: widget.itemBins[index].containerKeyChild,
+                              transform: new Matrix4.translationValues(
+                                  widget.itemBins[index].dragPointX,
+                                  widget.itemBins[index].dragPointY,
+                                  0.0),
+                              child: widget.itemBins[index].isLongPress ? null : widget.child(index),
+                            ),
+                          )),
+                    ),
+                  );
+                }),
+            PlaceholderItem<T>(
+              key: dragContainerKey,
+              width: itemWidth,
+              height: itemHeight,
+              itemBins: widget.itemBins,
+              itemBuilder: widget.child,
+            )
+          ],
+        ));
   }
 
   void handleOnPanEndEvent(int index) {
@@ -408,7 +418,7 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
     }
 
     // if (!isHideDeleteIcon) {
-    //   //计算手指点下去后，控件应该偏移多少像素
+    //   //计算手指点下去后，控件���该偏移多少像素
     //   pressItemBin.dragPointY = 0.0;
     //   pressItemBin.dragPointX = 0.0;
     // }
@@ -416,10 +426,35 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
 
   void handleOnLongDownEvent(
       int index, GestureLongPressDragStartDetails detail) {
-
     T pressItemBin = widget.itemBins[index];
 
-    getWidgetsSize(pressItemBin);
+    dragContainerKey.currentState.item = index;
+    final RenderBox box =
+        pressItemBin.containerKey.currentContext.findRenderObject();
+
+    itemWidth = box.paintBounds.size.width;
+    itemHeight = box.paintBounds.size.height;
+
+    itemWidthChild = pressItemBin.containerKeyChild.currentContext
+        .findRenderObject()
+        .paintBounds
+        .size
+        .width;
+    itemHeightChild = pressItemBin.containerKeyChild.currentContext
+        .findRenderObject()
+        .paintBounds
+        .size
+        .height;
+
+    blankSpaceHorizontal = (itemWidth - itemWidthChild) / 2;
+    blankSpaceVertical = (itemHeight - itemHeightChild) / 2;
+
+    final position = box.localToGlobal(Offset.zero, ancestor: context.findRenderObject());
+    pressItemBin.startPositionX = position.dx + blankSpaceHorizontal;
+    pressItemBin.startPositionY = position.dy + blankSpaceVertical;
+    print(
+        'X: ${pressItemBin.startPositionX}, Y: ${pressItemBin.startPositionY} , H $blankSpaceHorizontal V $blankSpaceVertical ');
+    pressItemBin.isLongPress = true;
 
     endPosition = index;
 
@@ -441,10 +476,11 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
       int index, GestureLongPressDragUpdateDetails updateDetail) {
     T pressItemBin = widget.itemBins[index];
 
-    pressItemBin.isLongPress = false;
+    // pressItemBin.isLongPress = false;
 
     pressItemBin.dragPointY = updateDetail.offsetFromOrigin.dy;
     pressItemBin.dragPointX = updateDetail.offsetFromOrigin.dx;
+
     print(
         'Update ${updateDetail.offsetFromOrigin.dx}   ,   ${updateDetail.offsetFromOrigin.dy}');
 
@@ -455,15 +491,13 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
       return;
     }
     timer = new Timer(new Duration(milliseconds: 100), () {
-      _shuffleBins(
-          index, pressItemBin.dragPointX, pressItemBin.dragPointY );
+      _shuffleBins(index, pressItemBin.dragPointX, pressItemBin.dragPointY);
     });
 
     setState(() {});
   }
 
-  void _shuffleBins(
-      int index, double dragPointX, double dragPointY) async {
+  void _shuffleBins(int index, double dragPointX, double dragPointY) async {
     double xBlankPlace = blankSpaceHorizontal * 2 + widget.crossAxisSpacing;
     double yBlankPlace = blankSpaceVertical * 2 + widget.mainAxisSpacing;
 
@@ -478,36 +512,6 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
       endPosition = x + y;
       _future = controller.forward();
     }
-  }
-
-  void getWidgetsSize(T pressItemBin) {
-    //获取 不 带边框的Container的宽度
-    itemWidth = pressItemBin.containerKey.currentContext
-        .findRenderObject()
-        .paintBounds
-        .size
-        .width;
-    itemHeight = pressItemBin.containerKey.currentContext
-        .findRenderObject()
-        .paintBounds
-        .size
-        .height;
-
-    //获取  带边框 的Container的宽度，就是可见的Item视图的宽度
-    itemWidthChild = pressItemBin.containerKeyChild.currentContext
-        .findRenderObject()
-        .paintBounds
-        .size
-        .width;
-    itemHeightChild = pressItemBin.containerKeyChild.currentContext
-        .findRenderObject()
-        .paintBounds
-        .size
-        .height;
-
-    //获取 不带边框  和它的子View （带边框 的Container）左右两边的空白部分的宽度
-    blankSpaceHorizontal = (itemWidth - itemWidthChild) / 2;
-    blankSpaceVertical = (itemHeight - itemHeightChild) / 2;
   }
 
   int geyXTransferItemCount(int index, double xBlankPlace, double dragPointX) {
@@ -756,5 +760,38 @@ class EditSwitchController {
 
   void editStateChanged() {
     dragAbleGridViewState.changeDeleteIconState();
+  }
+}
+
+class PlaceholderItem<T extends DragAbleGridViewBin> extends StatefulWidget {
+  final double width;
+  final double height;
+  final List<T> itemBins;
+  final CreateChild itemBuilder;
+
+  PlaceholderItem(
+      {Key key, this.width, this.height, this.itemBins, this.itemBuilder})
+      : super(key: key);
+
+  _PlaceholderItemState createState() => _PlaceholderItemState();
+}
+
+class _PlaceholderItemState extends State<PlaceholderItem> {
+  int item;
+
+  @override
+  Widget build(BuildContext context) {
+    if (item == null) {
+      return Container();
+    }
+    final bin = widget.itemBins[item];
+
+    return Container(
+      transform: new Matrix4.translationValues(
+          bin.startPositionX + bin.dragPointX,
+          bin.startPositionY + bin.dragPointY,
+          0.0),
+      child: widget.itemBuilder(item),
+    );
   }
 }
