@@ -7,8 +7,8 @@ class DragAbleGridViewBin {
   double dragPointY=0.0;
   double lastTimePositionX=0.0;
   double lastTimePositionY=0.0;
-  GlobalKey containerKey=new GlobalKey();
-  GlobalKey containerKeyChild=new GlobalKey();
+  GlobalKey containerKey= GlobalKey();
+  GlobalKey containerKeyChild= GlobalKey();
   bool isLongPress=false;
   bool dragAble=false;
   ///是否隐藏，默认不隐藏

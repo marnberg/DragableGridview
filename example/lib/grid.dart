@@ -29,9 +29,9 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    final spacing = 10.0;
+    final spacing = 5.0;
 
-    final columns = 4;
+    final columns = 1;
     final itemHeight = width / columns;
     final itemWidth = itemHeight; // - spacing * (columns - 1);
 
@@ -49,7 +49,6 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
               margin: EdgeInsets.only(right: 12),
             ),
             onTap: () {
-              changeActionState();
               editSwitchController.editStateChanged();
             },
           ))
@@ -63,54 +62,31 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
         itemBins: itemBins,
         editSwitchController: editSwitchController,
         /******************************new parameter*********************************/
-        isOpenDragAble: true,
         animationDuration: 300, //milliseconds
-        longPressDuration: 800, //milliseconds
         /******************************new parameter*********************************/
-
-        // deleteIcon: Container(
-        //     decoration: BoxDecoration(
-        //       color: Colors.red,
-        //       shape: BoxShape.circle,
-        //     ),
-        //     child: Icon(Icons
-        //         .close)), //Image.asset("images/close.png", width: 15.0, height: 15.0),
         child: (int position) {
           return Container(
             height: itemHeight,
             width: itemWidth,
-
-            padding: EdgeInsets.fromLTRB(8.0, 5.0, 8.0, 5.0),
-            decoration: new BoxDecoration(
-              borderRadius: BorderRadius.all(new Radius.circular(3.0)),
-              border: new Border.all(color: Colors.black87),
-              color: itemBins[position].dragAble ? Colors.red : Colors.blueGrey
-            ),
-            //Because this layout and the delete_Icon are in the same Stack, setting marginTop and marginRight will make the icon in the proper position.
-            margin: EdgeInsets.only(top: 6.0, right: 6.0),
-            child: Text(
-              itemBins[position].data,
-              style: new TextStyle(fontSize: 16.0, color: Colors.white),
+            padding: EdgeInsets.all(2.0),
+            child: Container(
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.all(new Radius.circular(3.0)),
+                  border: Border.all(color: Colors.black87),
+                  color: itemBins[position].dragAble
+                      ? Colors.red
+                      : Colors.blueGrey),
+              padding: EdgeInsets.all(8.0),
+              alignment: Alignment.center,
+              child: Text(
+                itemBins[position].data,
+                style: TextStyle(fontSize: 16.0, color: Colors.white),
+              ),
             ),
           );
         },
-        editChangeListener: () {
-          changeActionState();
-        },
       ),
     );
-  }
-
-  void changeActionState() {
-    if (actionTxt == actionTxtEdit) {
-      setState(() {
-        actionTxt = actionTxtComplete;
-      });
-    } else {
-      setState(() {
-        actionTxt = actionTxtEdit;
-      });
-    }
   }
 }
 
@@ -121,6 +97,6 @@ class ItemBin extends DragAbleGridViewBin {
 
   @override
   String toString() {
-    return 'ItemBin{data: $data, dragPointX: $dragPointX, dragPointY: $dragPointY, lastTimePositionX: $lastTimePositionX, lastTimePositionY: $lastTimePositionY, containerKey: $containerKey, containerKeyChild: $containerKeyChild, isLongPress: $isLongPress, dragAble: $dragAble}';
+    return 'ItemBin{data: $data, dragPointX: $dragPointX, dragPointY: $dragPointY, lastTimePositionX: $lastTimePositionX, lastTimePositionY: $lastTimePositionY, containerKey: $containerKey, isLongPress: $isLongPress, dragAble: $dragAble}';
   }
 }
