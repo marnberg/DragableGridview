@@ -7,6 +7,14 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    List<String> foo = List();
+    foo.add('1');
+    foo.add('2');
+        foo.add('3');
+
+
+    print('Element ${foo[1]}');
+
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(

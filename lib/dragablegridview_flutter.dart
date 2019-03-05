@@ -18,6 +18,7 @@ class DragAbleGridView<T extends DragAbleGridViewBin> extends StatefulWidget {
   final double childAspectRatio;
 
   final DragAbleGridViewController controller;
+  final VoidCallback onReorder;
 
   final int animationDuration;
   final bool requireEditToReorder;
@@ -33,6 +34,7 @@ class DragAbleGridView<T extends DragAbleGridViewBin> extends StatefulWidget {
     this.controller,
     this.animationDuration: 300,
     this.requireEditToReorder: false,
+    this.onReorder,
   })  : assert(itemBuilder != null, itemBins != null,),
         super(key: key);
 
@@ -99,6 +101,7 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
     for (int i = 0; i < widget.itemBins.length; i++) {
       itemPositions.add(i);
     }
+    setState(() {});
   }
 
   void _shuffleStatusListner(animationStatus) {
@@ -290,6 +293,10 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
   }
 
   void _onLongPressDragUp(int index) {
+    if (index >= widget.itemBins.length) {
+      fallbackReset();
+      return;
+    }
     T pressItemBin = widget.itemBins[index];
 
     // pressItemBin.isLongPress = false;
@@ -303,6 +310,9 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
 
   void _onLongPressDragStart(
       int index, GestureLongPressDragStartDetails detail) {
+    if (index >= widget.itemBins.length) {
+      return;
+    }
     T pressItemBin = widget.itemBins[index];
 
     dragContainerKey.currentState.setItem(index);
@@ -344,6 +354,12 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
 
   void _onLongPressDragUpdate(
       int index, GestureLongPressDragUpdateDetails updateDetail) {
+    if (index >= widget.itemBins.length) {
+      fallbackReset();
+
+      return;
+    }
+
     T pressItemBin = widget.itemBins[index];
 
     pressItemBin.dragPointY = updateDetail.offsetFromOrigin.dy;
@@ -364,6 +380,11 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
   }
 
   void _shuffleBins(int index, double dragPointX, double dragPointY) async {
+    if (index >= widget.itemBins.length) {
+      fallbackReset();
+      return;
+    }
+
     double xBlankPlace = blankSpaceHorizontal * 2 + widget.crossAxisSpacing;
     double yBlankPlace = blankSpaceVertical * 2 + widget.mainAxisSpacing;
 
@@ -515,6 +536,32 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
       widget.itemBins.clear();
       widget.itemBins.addAll(itemBi);
       _initItemPositions();
+      if (widget.onReorder != null) {
+        widget.onReorder();
+      }
+    });
+  }
+
+  void fallbackReset() async {
+    print('fallbackReset');
+    if (shuffleAnimationController.isAnimating) {
+      await _future;
+    }
+    dragContainerKey.currentState?.clearItem();
+    _initItemPositions();
+    setState(() {
+      List<T> itemBi = List();
+      T bin;
+      for (int i = 0; i < itemPositions.length; i++) {
+        bin = widget.itemBins[itemPositions[i]];
+        bin.dragPointX = 0.0;
+        bin.dragPointY = 0.0;
+        bin.lastTimePositionX = 0.0;
+        bin.lastTimePositionY = 0.0;
+        itemBi.add(bin);
+      }
+      widget.itemBins.clear();
+      widget.itemBins.addAll(itemBi);
     });
   }
 }
@@ -543,6 +590,12 @@ class DragAbleGridViewController {
   bool getSelectedMode() {
     return _dragAbleGridViewState?.isSelecting ?? false;
   }
+
+  void refreshItemsPositions() {
+    _dragAbleGridViewState?.fallbackReset();
+  }
+
+  void onReorder() {}
 }
 
 class PlaceholderItem<T extends DragAbleGridViewBin> extends StatefulWidget {
@@ -571,11 +624,15 @@ class _PlaceholderItemState extends State<PlaceholderItem> {
 
   @override
   Widget build(BuildContext context) {
-    if (_item == null) {
+    if (_item == null || _item >= widget.itemBins.length) {
       return Container();
     }
-    final bin = widget.itemBins[_item];
+    //  !widget.itemBins.contains(_item)
 
+    final bin = widget.itemBins[_item];
+    if (bin == null) {
+      return Container();
+    }
     return Container(
       transform: new Matrix4.translationValues(
           bin.startPositionX + bin.dragPointX,

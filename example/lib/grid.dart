@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:dragablegridview_flutter/dragablegridview_flutter.dart';
 import 'package:dragablegridview_flutter/dragablegridviewbin.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DragAbleGridViewDemo extends StatefulWidget {
   @override
@@ -10,17 +13,72 @@ class DragAbleGridViewDemo extends StatefulWidget {
 }
 
 class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
-  List<ItemBin> itemBins = List();
-  final controller = DragAbleGridViewController(persistentSelection: true);
-  bool isSelecting = false;
+  static final String storeKey = 'itemIds';
 
+  List<ItemBin> itemBins = List();
+  final controller = DragAbleGridViewController(persistentSelection: false);
+  bool isSelecting = false;
+  Timer timer;
 
   @override
   void initState() {
     super.initState();
-    for (int i = 0; i < 1000; i++) {
-      itemBins.add(ItemBin(i.toString()));
+
+    _loadStoredData();
+
+    addOrRemoveItem();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    timer?.cancel();
+    timer = null;
+  }
+
+  void _loadStoredData() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    itemBins.clear();
+    final items = prefs.getStringList(storeKey) ?? _defaultData();
+    items.forEach((item) {
+      itemBins.add(ItemBin(item));
+    });
+    controller.refreshItemsPositions();
+  }
+
+  void addOrRemoveItem() {
+    timer?.cancel();
+
+    setState(() {
+      if (itemBins.length < 20) {
+        itemBins.add(ItemBin(itemBins.length.toString()));
+      } else {
+        itemBins.removeLast();
+      }
+    });
+
+    _saveDataToStore();
+
+    timer = Timer(Duration(seconds: 10), () {
+      addOrRemoveItem();
+    });
+  }
+
+  void _saveDataToStore() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final List<String> storeList = itemBins.map((item) => item.data).toList();
+    prefs.setStringList(storeKey, storeList);
+    controller.refreshItemsPositions();
+  }
+
+  List<String> _defaultData() {
+    List<String> _defaultItems = List();
+    for (int i = 0; i < 4; i++) {
+      _defaultItems.add(i.toString());
     }
+    return _defaultItems;
   }
 
   @override
@@ -32,14 +90,14 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
     final itemHeight = width / columns;
     final itemWidth = itemHeight; // - spacing * (columns - 1);
 
-    return new Scaffold(
-      appBar: new AppBar(
-        title: new Text("GridView"),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("GridView"),
         actions: <Widget>[
-          new Center(
-              child: new GestureDetector(
-            child: new Container(
-              child: new Text(
+          Center(
+              child: GestureDetector(
+            child: Container(
+              child: Text(
                 isSelecting ? 'Done' : 'Select',
                 style: TextStyle(fontSize: 19.0),
               ),
@@ -62,6 +120,14 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
         itemBins: itemBins,
         controller: controller,
         animationDuration: 100, //milliseconds
+        onReorder: () {
+          print('==========');
+          itemBins.forEach((item) {
+            print('Item ${item.data}');
+          });
+
+          _saveDataToStore();
+        },
         itemBuilder: (BuildContext context, int position) {
           return Container(
             height: itemHeight,
