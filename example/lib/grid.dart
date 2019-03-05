@@ -11,16 +11,13 @@ class DragAbleGridViewDemo extends StatefulWidget {
 
 class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
   List<ItemBin> itemBins = List();
-  String actionTxtEdit = "Edit";
-  String actionTxtComplete = "Done";
-  String actionTxt;
-  var editSwitchController = EditSwitchController();
+  final controller = DragAbleGridViewController(persistentSelection: true);
+  bool isSelecting = false;
+
 
   @override
   void initState() {
     super.initState();
-    actionTxt = actionTxtEdit;
-
     for (int i = 0; i < 1000; i++) {
       itemBins.add(ItemBin(i.toString()));
     }
@@ -31,7 +28,7 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
     final width = MediaQuery.of(context).size.width;
     final spacing = 5.0;
 
-    final columns = 1;
+    final columns = 3;
     final itemHeight = width / columns;
     final itemWidth = itemHeight; // - spacing * (columns - 1);
 
@@ -43,13 +40,16 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
               child: new GestureDetector(
             child: new Container(
               child: new Text(
-                actionTxt,
+                isSelecting ? 'Done' : 'Select',
                 style: TextStyle(fontSize: 19.0),
               ),
               margin: EdgeInsets.only(right: 12),
             ),
             onTap: () {
-              editSwitchController.editStateChanged();
+              setState(() {
+                isSelecting = !isSelecting;
+              });
+              controller.setSelectedMode(isSelecting);
             },
           ))
         ],
@@ -60,11 +60,9 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
         childAspectRatio: 1,
         crossAxisCount: columns,
         itemBins: itemBins,
-        editSwitchController: editSwitchController,
-        /******************************new parameter*********************************/
-        animationDuration: 300, //milliseconds
-        /******************************new parameter*********************************/
-        child: (int position) {
+        controller: controller,
+        animationDuration: 100, //milliseconds
+        itemBuilder: (BuildContext context, int position) {
           return Container(
             height: itemHeight,
             width: itemWidth,
@@ -73,7 +71,7 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.all(new Radius.circular(3.0)),
                   border: Border.all(color: Colors.black87),
-                  color: itemBins[position].dragAble
+                  color: itemBins[position].isSelected
                       ? Colors.red
                       : Colors.blueGrey),
               padding: EdgeInsets.all(8.0),
@@ -97,6 +95,6 @@ class ItemBin extends DragAbleGridViewBin {
 
   @override
   String toString() {
-    return 'ItemBin{data: $data, dragPointX: $dragPointX, dragPointY: $dragPointY, lastTimePositionX: $lastTimePositionX, lastTimePositionY: $lastTimePositionY, containerKey: $containerKey, isLongPress: $isLongPress, dragAble: $dragAble}';
+    return 'ItemBin{data: $data, dragPointX: $dragPointX, dragPointY: $dragPointY, lastTimePositionX: $lastTimePositionX, lastTimePositionY: $lastTimePositionY, containerKey: $containerKey, isDraging: $isDraging}';
   }
 }

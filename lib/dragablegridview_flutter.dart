@@ -8,7 +8,7 @@ typedef CreateChild = Widget Function(int position);
 typedef EditChangeListener();
 
 class DragAbleGridView<T extends DragAbleGridViewBin> extends StatefulWidget {
-  final CreateChild child;
+  final IndexedWidgetBuilder itemBuilder;
   final List<T> itemBins;
 
   final int crossAxisCount;
@@ -17,36 +17,36 @@ class DragAbleGridView<T extends DragAbleGridViewBin> extends StatefulWidget {
   final double mainAxisSpacing;
   final double childAspectRatio;
 
-  final EditSwitchController editSwitchController;
+  final DragAbleGridViewController controller;
 
   final int animationDuration;
-
-  final Widget deleteIcon;
+  final bool requireEditToReorder;
 
   DragAbleGridView({
-    @required this.child,
+    Key key,
+    @required this.itemBuilder,
     @required this.itemBins,
     this.crossAxisCount: 4,
     this.childAspectRatio: 1.0,
     this.mainAxisSpacing: 0.0,
     this.crossAxisSpacing: 0.0,
-    this.editSwitchController,
+    this.controller,
     this.animationDuration: 300,
-    this.deleteIcon,
-  }) : assert(child != null, itemBins != null,);
+    this.requireEditToReorder: false,
+  })  : assert(itemBuilder != null, itemBins != null,),
+        super(key: key);
 
   @override
   State<StatefulWidget> createState() {
-    return new DragAbleGridViewState<T>();
+    return _DragAbleGridViewState<T>();
   }
 }
 
-class DragAbleGridViewState<T extends DragAbleGridViewBin>
+class _DragAbleGridViewState<T extends DragAbleGridViewBin>
     extends State<DragAbleGridView> with SingleTickerProviderStateMixin {
-  final _userScrollable = const ScrollPhysics();
   final dragContainerKey = GlobalKey<_PlaceholderItemState>();
 
-  var scrollPhysics;
+  final scrollPhysics = const ScrollPhysics();
 
   final scrollController = ScrollController();
 
@@ -73,12 +73,14 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
   bool isRemoveItem = false;
   Future _future;
 
+  bool isSelecting = false;
+  Set<int> selectedPositions = Set();
+
   @override
   void initState() {
     super.initState();
-    scrollPhysics = _userScrollable;
 
-    widget.editSwitchController.dragAbleGridViewState = this;
+    widget.controller._dragAbleGridViewState = this;
     shuffleAnimationController = AnimationController(
         duration: Duration(milliseconds: widget.animationDuration),
         vsync: this);
@@ -227,15 +229,34 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
                     mainAxisSpacing: widget.mainAxisSpacing),
                 itemBuilder: (BuildContext contexts, int index) {
                   return GestureDetector(
+                    onTap: isSelecting
+                        ? () {
+                            setState(() {
+                              widget.itemBins[index].isSelected =
+                                  !widget.itemBins[index].isSelected;
+                              if (widget.itemBins[index].isSelected) {
+                                selectedPositions.add(index);
+                              } else {
+                                selectedPositions.remove(index);
+                              }
+                            });
+                          }
+                        : null,
                     onLongPressDragStart: (details) {
-                      _onLongDownEvent(index, details);
+                      if (!widget.requireEditToReorder || isSelecting) {
+                        _onLongPressDragStart(index, details);
+                      }
                     },
                     onLongPressDragUpdate: (details) {
-                      _onLongPressDragUpdate(index, details);
+                      if (!widget.requireEditToReorder || isSelecting) {
+                        _onLongPressDragUpdate(index, details);
+                      }
                     },
                     onLongPressDragUp: (details) {
-                      _onLongPressDragUp(index);
-                      dragContainerKey.currentState.clearItem();
+                      if (!widget.requireEditToReorder || isSelecting) {
+                        _onLongPressDragUp(index);
+                        dragContainerKey.currentState.clearItem();
+                      }
                     },
                     key: widget.itemBins[index].containerKey,
                     child: Container(
@@ -251,9 +272,9 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
                                   widget.itemBins[index].dragPointX,
                                   widget.itemBins[index].dragPointY,
                                   0.0),
-                              child: widget.itemBins[index].isLongPress
+                              child: widget.itemBins[index].isDraging
                                   ? null
-                                  : widget.child(index),
+                                  : widget.itemBuilder(context, index),
                             ),
                           )),
                     ),
@@ -262,7 +283,7 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
             PlaceholderItem<T>(
               key: dragContainerKey,
               itemBins: widget.itemBins,
-              itemBuilder: widget.child,
+              itemBuilder: widget.itemBuilder,
             )
           ],
         ));
@@ -271,8 +292,8 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
   void _onLongPressDragUp(int index) {
     T pressItemBin = widget.itemBins[index];
 
-    pressItemBin.isLongPress = false;
-    if (!pressItemBin.dragAble) {
+    // pressItemBin.isLongPress = false;
+    if (!pressItemBin.isDraging) {
       pressItemBin.dragPointY = 0.0;
       pressItemBin.dragPointX = 0.0;
     } else {
@@ -280,7 +301,8 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
     }
   }
 
-  void _onLongDownEvent(int index, GestureLongPressDragStartDetails detail) {
+  void _onLongPressDragStart(
+      int index, GestureLongPressDragStartDetails detail) {
     T pressItemBin = widget.itemBins[index];
 
     dragContainerKey.currentState.setItem(index);
@@ -310,12 +332,12 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
     pressItemBin.startPositionX = position.dx + blankSpaceHorizontal;
     pressItemBin.startPositionY = position.dy + blankSpaceVertical;
 
-    pressItemBin.isLongPress = true;
+    // pressItemBin.isLongPress = true;
 
     endPosition = index;
 
     setState(() {
-      widget.itemBins[index].dragAble = true;
+      widget.itemBins[index].isDraging = true;
       startPosition = index;
     });
   }
@@ -352,7 +374,7 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
         !shuffleAnimationController.isAnimating &&
         x + y < widget.itemBins.length &&
         x + y >= 0 &&
-        widget.itemBins[index].dragAble) {
+        widget.itemBins[index].isDraging) {
       endPosition = x + y;
       _future = shuffleAnimationController.forward();
     }
@@ -411,7 +433,6 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
       return 0;
     }
   }
-
 
   int geyYTransferItemCount(int index, double yBlankPlace, double dragPointY) {
     if (dragPointY.abs() > yBlankPlace) {
@@ -476,13 +497,11 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
   }
 
   void onPanEndEvent(index) async {
-    widget.itemBins[index].dragAble = false;
+    widget.itemBins[index].isDraging = false;
     if (shuffleAnimationController.isAnimating) {
       await _future;
     }
     setState(() {
-      scrollPhysics = _userScrollable;
-
       List<T> itemBi = List();
       T bin;
       for (int i = 0; i < itemPositions.length; i++) {
@@ -498,20 +517,37 @@ class DragAbleGridViewState<T extends DragAbleGridViewBin>
       _initItemPositions();
     });
   }
-
-
 }
 
-class EditSwitchController {
-  DragAbleGridViewState dragAbleGridViewState;
+class DragAbleGridViewController {
+  _DragAbleGridViewState _dragAbleGridViewState;
 
-  void editStateChanged() {
+  bool persistentSelection;
+  DragAbleGridViewController({this.persistentSelection: false});
+
+  void setSelectedMode(bool selected) {
+    _dragAbleGridViewState?.isSelecting = selected;
+
+    if (!persistentSelection && !selected) {
+      _dragAbleGridViewState.selectedPositions.forEach((index) {
+        _dragAbleGridViewState.widget.itemBins[index].isSelected = false;
+      });
+      _dragAbleGridViewState.selectedPositions.clear();
+    } else {
+      _dragAbleGridViewState.selectedPositions.forEach((index) {
+        _dragAbleGridViewState.widget.itemBins[index].isSelected = selected;
+      });
+    }
+  }
+
+  bool getSelectedMode() {
+    return _dragAbleGridViewState?.isSelecting ?? false;
   }
 }
 
 class PlaceholderItem<T extends DragAbleGridViewBin> extends StatefulWidget {
   final List<T> itemBins;
-  final CreateChild itemBuilder;
+  final IndexedWidgetBuilder itemBuilder;
 
   PlaceholderItem({Key key, this.itemBins, this.itemBuilder}) : super(key: key);
 
@@ -545,7 +581,7 @@ class _PlaceholderItemState extends State<PlaceholderItem> {
           bin.startPositionX + bin.dragPointX,
           bin.startPositionY + bin.dragPointY,
           0.0),
-      child: widget.itemBuilder(_item),
+      child: widget.itemBuilder(context, _item),
     );
   }
 }
