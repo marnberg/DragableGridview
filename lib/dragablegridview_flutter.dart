@@ -87,7 +87,7 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
   void initState() {
     super.initState();
 
-    widget.controller._dragAbleGridViewState = this;
+    widget.controller?._dragAbleGridViewState = this;
     shuffleAnimationController = AnimationController(
         duration: Duration(milliseconds: widget.animationDuration),
         vsync: this);
