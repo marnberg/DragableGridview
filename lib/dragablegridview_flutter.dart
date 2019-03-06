@@ -11,6 +11,7 @@ typedef EditChangeListener();
 class DragAbleGridView<T extends DragAbleGridViewBin> extends StatefulWidget {
   final IndexedWidgetBuilder itemBuilder;
   final List<T> itemBins;
+  final Size containerSize;
 
   final int crossAxisCount;
 
@@ -40,6 +41,7 @@ class DragAbleGridView<T extends DragAbleGridViewBin> extends StatefulWidget {
     this.onReorder,
     this.onSelectionChanged,
     this.onDragStarted,
+    this.containerSize,
   })  : assert(itemBuilder != null, itemBins != null,),
         super(key: key);
 
@@ -215,9 +217,14 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    Size screenSize = MediaQuery.of(context).size;
-    screenWidth = screenSize.width;
-    screenHeight = screenSize.height;
+    if (widget.containerSize != null) {
+      screenWidth = widget.containerSize.width;
+      screenHeight = widget.containerSize.height;
+    } else {
+      Size screenSize = MediaQuery.of(context).size;
+      screenWidth = screenSize.width;
+      screenHeight = screenSize.height;
+    }
   }
 
   @override
