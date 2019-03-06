@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dragablegridview_flutter/dragablegridview_flutter.dart';
 import 'package:dragablegridview_flutter/dragablegridviewbin.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DragAbleGridViewDemo extends StatefulWidget {
@@ -18,6 +19,7 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
   List<ItemBin> itemBins = List();
   final controller = DragAbleGridViewController(persistentSelection: false);
   bool isSelecting = false;
+  bool hasSelection = false;
   Timer timer;
 
   @override
@@ -26,7 +28,7 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
 
     _loadStoredData();
 
-    addOrRemoveItem();
+    //addOrRemoveItem();
   }
 
   @override
@@ -75,7 +77,7 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
 
   List<String> _defaultData() {
     List<String> _defaultItems = List();
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 20; i++) {
       _defaultItems.add(i.toString());
     }
     return _defaultItems;
@@ -93,6 +95,21 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
     return Scaffold(
       appBar: AppBar(
         title: Text("GridView"),
+        leading: isSelecting
+            ? IconButton(
+                icon: Icon(Icons.delete),
+                onPressed: hasSelection
+                    ? () {
+                        setState(() {
+                          itemBins = itemBins
+                              .where((item) => !item.isSelected)
+                              .toList();
+                          hasSelection = false;
+                        });
+                      }
+                    : null,
+              )
+            : null,
         actions: <Widget>[
           Center(
               child: GestureDetector(
@@ -103,9 +120,10 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
               ),
               margin: EdgeInsets.only(right: 12),
             ),
-            onTap: () {
+            onTap: () async {
               setState(() {
                 isSelecting = !isSelecting;
+                hasSelection = (controller.getSelected()?.length ?? 0) > 0;
               });
               controller.setSelectedMode(isSelecting);
             },
@@ -121,12 +139,17 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
         controller: controller,
         animationDuration: 100, //milliseconds
         onReorder: () {
-          print('==========');
-          itemBins.forEach((item) {
-            print('Item ${item.data}');
-          });
-
           _saveDataToStore();
+        },
+        onSelectionChanged: (index) {
+          setState(() {
+            final numberSelected = controller.getSelected()?.length ?? 0;
+
+            hasSelection = numberSelected > 0;
+          });
+        },
+        onDragStarted: (index) {
+          HapticFeedback.lightImpact();
         },
         itemBuilder: (BuildContext context, int position) {
           return Container(

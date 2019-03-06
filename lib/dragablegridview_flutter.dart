@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dragablegridview_flutter/dragablegridviewbin.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 typedef CreateChild = Widget Function(int position);
 typedef EditChangeListener();
@@ -19,6 +20,8 @@ class DragAbleGridView<T extends DragAbleGridViewBin> extends StatefulWidget {
 
   final DragAbleGridViewController controller;
   final VoidCallback onReorder;
+  final void Function(int) onSelectionChanged;
+  final void Function(int) onDragStarted;
 
   final int animationDuration;
   final bool requireEditToReorder;
@@ -35,6 +38,8 @@ class DragAbleGridView<T extends DragAbleGridViewBin> extends StatefulWidget {
     this.animationDuration: 300,
     this.requireEditToReorder: false,
     this.onReorder,
+    this.onSelectionChanged,
+    this.onDragStarted,
   })  : assert(itemBuilder != null, itemBins != null,),
         super(key: key);
 
@@ -101,6 +106,7 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
     for (int i = 0; i < widget.itemBins.length; i++) {
       itemPositions.add(i);
     }
+    selectedPositions.clear();
     setState(() {});
   }
 
@@ -243,6 +249,9 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
                                 selectedPositions.remove(index);
                               }
                             });
+                            if (widget.onSelectionChanged != null) {
+                              widget.onSelectionChanged(index);
+                            }
                           }
                         : null,
                     onLongPressDragStart: (details) {
@@ -313,6 +322,10 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
     if (index >= widget.itemBins.length) {
       return;
     }
+    if (widget.onDragStarted != null) {
+      widget.onDragStarted(index);
+    }
+
     T pressItemBin = widget.itemBins[index];
 
     dragContainerKey.currentState.setItem(index);
@@ -341,8 +354,6 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
         box.localToGlobal(Offset.zero, ancestor: context.findRenderObject());
     pressItemBin.startPositionX = position.dx + blankSpaceHorizontal;
     pressItemBin.startPositionY = position.dy + blankSpaceVertical;
-
-    // pressItemBin.isLongPress = true;
 
     endPosition = index;
 
@@ -526,12 +537,14 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
       List<T> itemBi = List();
       T bin;
       for (int i = 0; i < itemPositions.length; i++) {
-        bin = widget.itemBins[itemPositions[i]];
-        bin.dragPointX = 0.0;
-        bin.dragPointY = 0.0;
-        bin.lastTimePositionX = 0.0;
-        bin.lastTimePositionY = 0.0;
-        itemBi.add(bin);
+        if (widget.itemBins.length > itemPositions[i]) {
+          bin = widget.itemBins[itemPositions[i]];
+          bin.dragPointX = 0.0;
+          bin.dragPointY = 0.0;
+          bin.lastTimePositionX = 0.0;
+          bin.lastTimePositionY = 0.0;
+          itemBi.add(bin);
+        }
       }
       widget.itemBins.clear();
       widget.itemBins.addAll(itemBi);
@@ -543,12 +556,13 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
   }
 
   void fallbackReset() async {
-    print('fallbackReset');
     if (shuffleAnimationController.isAnimating) {
       await _future;
     }
     dragContainerKey.currentState?.clearItem();
     _initItemPositions();
+    selectedPositions.clear();
+
     setState(() {
       List<T> itemBi = List();
       T bin;
@@ -559,10 +573,16 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
         bin.lastTimePositionX = 0.0;
         bin.lastTimePositionY = 0.0;
         itemBi.add(bin);
+        if (bin.isSelected == true) {
+          selectedPositions.add(itemPositions[i]);
+        }
       }
       widget.itemBins.clear();
       widget.itemBins.addAll(itemBi);
     });
+    if (widget.onSelectionChanged != null) {
+      widget.onSelectionChanged(null);
+    }
   }
 }
 
@@ -589,6 +609,10 @@ class DragAbleGridViewController {
 
   bool getSelectedMode() {
     return _dragAbleGridViewState?.isSelecting ?? false;
+  }
+
+  Set<int> getSelected() {
+    return _dragAbleGridViewState?.selectedPositions;
   }
 
   void refreshItemsPositions() {
@@ -627,8 +651,6 @@ class _PlaceholderItemState extends State<PlaceholderItem> {
     if (_item == null || _item >= widget.itemBins.length) {
       return Container();
     }
-    //  !widget.itemBins.contains(_item)
-
     final bin = widget.itemBins[_item];
     if (bin == null) {
       return Container();
