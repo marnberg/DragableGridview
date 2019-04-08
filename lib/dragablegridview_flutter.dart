@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:dragablegridview_flutter/dragablegridviewbin.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 typedef CreateChild = Widget Function(int position);
 typedef EditChangeListener();
@@ -261,17 +260,18 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
                             }
                           }
                         : null,
-                    onLongPressDragStart: (details) {
+                    
+                    onLongPressStart: (details) {
                       if (!widget.requireEditToReorder || isSelecting) {
                         _onLongPressDragStart(index, details);
                       }
                     },
-                    onLongPressDragUpdate: (details) {
+                    onLongPressMoveUpdate: (details) {
                       if (!widget.requireEditToReorder || isSelecting) {
                         _onLongPressDragUpdate(index, details);
                       }
                     },
-                    onLongPressDragUp: (details) {
+                    onLongPressUp: () {
                       if (!widget.requireEditToReorder || isSelecting) {
                         _onLongPressDragUp(index);
                         dragContainerKey.currentState.clearItem();
@@ -325,7 +325,7 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
   }
 
   void _onLongPressDragStart(
-      int index, GestureLongPressDragStartDetails detail) {
+      int index, LongPressStartDetails detail) {
     if (index >= widget.itemBins.length) {
       return;
     }
@@ -371,7 +371,7 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
   }
 
   void _onLongPressDragUpdate(
-      int index, GestureLongPressDragUpdateDetails updateDetail) {
+      int index, LongPressMoveUpdateDetails updateDetail) {
     if (index >= widget.itemBins.length) {
       fallbackReset();
 
