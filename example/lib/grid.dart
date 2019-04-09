@@ -138,7 +138,7 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
         itemBins: itemBins,
         controller: controller,
         animationDuration: 100, //milliseconds
-        onReorder: () {
+        onReorder: (items) {
           _saveDataToStore();
         },
         onSelectionChanged: (index) {

@@ -19,7 +19,7 @@ class DragAbleGridView<T extends DragAbleGridViewBin> extends StatefulWidget {
   final double childAspectRatio;
 
   final DragAbleGridViewController controller;
-  final VoidCallback onReorder;
+  final ValueChanged<List<T>> onReorder;
   final void Function(int) onSelectionChanged;
   final void Function(int) onDragStarted;
 
@@ -557,7 +557,7 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
       widget.itemBins.addAll(itemBi);
       _initItemPositions();
       if (widget.onReorder != null) {
-        widget.onReorder();
+        widget.onReorder(widget.itemBins);
       }
     });
   }
