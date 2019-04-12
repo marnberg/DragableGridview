@@ -5,6 +5,7 @@ import 'package:dragablegridview_flutter/dragablegridviewbin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sprung/sprung.dart';
 
 class DragAbleGridViewDemo extends StatefulWidget {
   @override
@@ -13,7 +14,8 @@ class DragAbleGridViewDemo extends StatefulWidget {
   }
 }
 
-class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
+class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo>
+    with SingleTickerProviderStateMixin {
   static final String storeKey = 'itemIds';
 
   List<ItemBin> itemBins = List();
@@ -22,13 +24,18 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
   bool hasSelection = false;
   Timer timer;
 
+  Animation<double> _scaleAnimation;
+  AnimationController _dragScaleController;
+
   @override
   void initState() {
     super.initState();
 
     _loadStoredData();
 
-    //addOrRemoveItem();
+    _dragScaleController =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 500));
+
   }
 
   @override
@@ -36,6 +43,7 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
     super.dispose();
     timer?.cancel();
     timer = null;
+    _dragScaleController.dispose();
   }
 
   void _loadStoredData() async {
@@ -140,6 +148,7 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
         animationDuration: 100, //milliseconds
         onReorder: (items) {
           _saveDataToStore();
+          _dragScaleController.reset();
         },
         onSelectionChanged: (index) {
           setState(() {
@@ -150,27 +159,43 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo> {
         },
         onDragStarted: (index) {
           HapticFeedback.lightImpact();
+          _dragScaleController.forward();
         },
         itemBuilder: (BuildContext context, int position) {
-          return Container(
-            height: itemHeight,
-            width: itemWidth,
-            padding: EdgeInsets.all(2.0),
-            child: Container(
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.all(new Radius.circular(3.0)),
-                  border: Border.all(color: Colors.black87),
-                  color: itemBins[position].isSelected
-                      ? Colors.red
-                      : Colors.blueGrey),
-              padding: EdgeInsets.all(8.0),
-              alignment: Alignment.center,
-              child: Text(
-                itemBins[position].data,
-                style: TextStyle(fontSize: 16.0, color: Colors.white),
-              ),
-            ),
-          );
+          _scaleAnimation = Tween<double>(
+            begin: 0.8,
+            end: 1.05,
+          ).animate(CurvedAnimation(
+            parent: _dragScaleController,
+            curve: Sprung(damped: Damped.under),
+          ));
+
+          final isDragging = itemBins[position].isDraging;
+
+          final container = Container(
+              height: itemHeight,
+              width: itemHeight,
+              padding: EdgeInsets.all(2.0),
+              child: Container(
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.all(new Radius.circular(3.0)),
+                    border: isDragging
+                        ? Border.all(width: 3.0, color: Colors.red)
+                        : Border.all(color: Colors.black87),
+                    color: itemBins[position].isSelected
+                        ? Colors.red
+                        : Colors.blueGrey),
+                padding: EdgeInsets.all(8.0),
+                alignment: Alignment.center,
+                child: Text(
+                  itemBins[position].data,
+                  style: TextStyle(fontSize: 16.0, color: Colors.white),
+                ),
+              ));
+
+          return isDragging
+              ? ScaleTransition(scale: _scaleAnimation, child: container)
+              : container;
         },
       ),
     );

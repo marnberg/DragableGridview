@@ -29,6 +29,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.14.11"
+  cupertino_icons:
+    dependency: transitive
+    description:
+      name: cupertino_icons
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.2"
   dragablegridview_flutter:
     dependency: "direct main"
     description:
@@ -100,6 +107,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.5.5"
+  sprung:
+    dependency: "direct main"
+    description:
+      name: sprung
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.1.0+11"
   stack_trace:
     dependency: transitive
     description:
