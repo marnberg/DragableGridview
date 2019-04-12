@@ -326,7 +326,7 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
 
   void _onLongPressDragStart(
       int index, LongPressStartDetails detail) {
-    if (index >= widget.itemBins.length) {
+    if (index >= widget.itemBins.length || widget.itemBins.length < 2) {
       return;
     }
     if (widget.onDragStarted != null) {
