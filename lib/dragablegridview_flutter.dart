@@ -260,7 +260,6 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
                             }
                           }
                         : null,
-                    
                     onLongPressStart: (details) {
                       if (!widget.requireEditToReorder || isSelecting) {
                         _onLongPressDragStart(index, details);
@@ -309,6 +308,10 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
   }
 
   void _onLongPressDragUp(int index) {
+    if (widget.itemBins.length < 2) {
+      return;
+    }
+
     if (index >= widget.itemBins.length) {
       fallbackReset();
       return;
@@ -324,8 +327,7 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
     }
   }
 
-  void _onLongPressDragStart(
-      int index, LongPressStartDetails detail) {
+  void _onLongPressDragStart(int index, LongPressStartDetails detail) {
     if (index >= widget.itemBins.length || widget.itemBins.length < 2) {
       return;
     }
@@ -372,9 +374,12 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
 
   void _onLongPressDragUpdate(
       int index, LongPressMoveUpdateDetails updateDetail) {
+    if (widget.itemBins.length < 2) {
+      return;
+    }
+    
     if (index >= widget.itemBins.length) {
       fallbackReset();
-
       return;
     }
 
