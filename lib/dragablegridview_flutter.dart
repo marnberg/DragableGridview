@@ -566,6 +566,10 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
     if (shuffleAnimationController.isAnimating) {
       await _future;
     }
+    if (!mounted) {
+      return;
+    }
+
     dragContainerKey.currentState?.clearItem();
     _initItemPositions();
     selectedPositions.clear();
