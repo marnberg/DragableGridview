@@ -62,6 +62,7 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
   double screenHeight;
 
   List<int> itemPositions;
+  bool resetPositions = true;
 
   double itemWidth;
   double itemHeight;
@@ -109,6 +110,17 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
     }
     selectedPositions.clear();
     setState(() {});
+  }
+
+  void _ensurePositions() {
+    if (resetPositions) {
+      itemPositions = List();
+      for (int i = 0; i < widget.itemBins.length; i++) {
+        itemPositions.add(i);
+      }
+      selectedPositions.clear();
+      resetPositions = false;
+    }
   }
 
   void _shuffleStatusListner(animationStatus) {
@@ -228,6 +240,7 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
 
   @override
   Widget build(BuildContext context) {
+    _ensurePositions();
     return new NotificationListener(
         onNotification: (onNotifications) {},
         child: Stack(
@@ -377,7 +390,7 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
     if (widget.itemBins.length < 2) {
       return;
     }
-    
+
     if (index >= widget.itemBins.length) {
       fallbackReset();
       return;
@@ -560,7 +573,7 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
       }
       widget.itemBins.clear();
       widget.itemBins.addAll(itemBi);
-      _initItemPositions();
+      resetPositions = true;
       if (widget.onReorder != null) {
         widget.onReorder(widget.itemBins);
       }
@@ -576,7 +589,7 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
     }
 
     dragContainerKey.currentState?.clearItem();
-    _initItemPositions();
+    resetPositions = true;
     selectedPositions.clear();
 
     setState(() {
