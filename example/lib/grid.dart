@@ -35,7 +35,6 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo>
 
     _dragScaleController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 500));
-
   }
 
   @override
@@ -61,7 +60,7 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo>
     timer?.cancel();
 
     setState(() {
-      if (itemBins.length < 20) {
+      if (itemBins.length < 10) {
         itemBins.add(ItemBin(itemBins.length.toString()));
       } else {
         itemBins.removeLast();
@@ -136,6 +135,35 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo>
               controller.setSelectedMode(isSelecting);
             },
           ))
+        ],
+      ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: FloatingActionButton(
+              child: Icon(Icons.add),
+              onPressed: () {
+                setState(() {
+                  itemBins.add(ItemBin(itemBins.length.toString()));
+                  //controller.refreshItemsPositions();
+                });
+              },
+            ),
+          ),
+          FloatingActionButton(
+            backgroundColor: Colors.red,
+            child: Icon(Icons.remove),
+            onPressed: () {
+              if (itemBins.isNotEmpty) {
+                setState(() {
+                  itemBins.removeLast();
+                  //controller.refreshItemsPositions();
+                });
+              }
+            },
+          )
         ],
       ),
       body: DragAbleGridView(
