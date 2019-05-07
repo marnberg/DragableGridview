@@ -41,7 +41,10 @@ class DragAbleGridView<T extends DragAbleGridViewBin> extends StatefulWidget {
     this.onSelectionChanged,
     this.onDragStarted,
     this.containerSize,
-  })  : assert(itemBuilder != null, itemBins != null,),
+  })  : assert(
+          itemBuilder != null,
+          itemBins != null,
+        ),
         super(key: key);
 
   @override
@@ -77,7 +80,6 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
   int endPosition;
   bool isRest = false;
 
-  Timer timer;
   bool isRemoveItem = false;
   Future _future;
 
@@ -399,16 +401,10 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
     pressItemBin.dragPointY = updateDetail.offsetFromOrigin.dy;
     pressItemBin.dragPointX = updateDetail.offsetFromOrigin.dx;
 
-    if (timer != null && timer.isActive) {
-      timer.cancel();
-    }
-
     if (shuffleAnimationController.isAnimating) {
       return;
     }
-    timer = Timer(Duration(milliseconds: 30), () {
-      _shuffleBins(index, pressItemBin.dragPointX, pressItemBin.dragPointY);
-    });
+    _shuffleBins(index, pressItemBin.dragPointX, pressItemBin.dragPointY);
 
     setState(() {});
   }

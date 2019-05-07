@@ -97,7 +97,6 @@ class DragAbleGridViewDemoState extends State<DragAbleGridViewDemo>
 
     final columns = 3;
     final itemHeight = width / columns;
-    final itemWidth = itemHeight; // - spacing * (columns - 1);
 
     return Scaffold(
       appBar: AppBar(
