@@ -25,6 +25,8 @@ class DragAbleGridView<T extends DragAbleGridViewBin> extends StatefulWidget {
 
   final int animationDuration;
   final bool requireEditToReorder;
+  final ScrollPhysics scrollPhysics;
+
 
   DragAbleGridView({
     Key key,
@@ -41,6 +43,7 @@ class DragAbleGridView<T extends DragAbleGridViewBin> extends StatefulWidget {
     this.onSelectionChanged,
     this.onDragStarted,
     this.containerSize,
+    this.scrollPhysics = const ScrollPhysics()
   })  : assert(
           itemBuilder != null,
           itemBins != null,
@@ -56,8 +59,6 @@ class DragAbleGridView<T extends DragAbleGridViewBin> extends StatefulWidget {
 class _DragAbleGridViewState<T extends DragAbleGridViewBin>
     extends State<DragAbleGridView> with SingleTickerProviderStateMixin {
   final dragContainerKey = GlobalKey<_PlaceholderItemState>();
-
-  final scrollPhysics = const ScrollPhysics();
 
   final scrollController = ScrollController();
 
@@ -241,83 +242,81 @@ class _DragAbleGridViewState<T extends DragAbleGridViewBin>
 
   @override
   Widget build(BuildContext context) {
-    return new NotificationListener(
-        onNotification: (onNotifications) {},
-        child: Stack(
-          children: <Widget>[
-            GridView.builder(
-                physics: scrollPhysics,
-                scrollDirection: Axis.vertical,
-                controller: scrollController,
-                itemCount: _itemBins().length,
-                gridDelegate: new SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: widget.crossAxisCount,
-                    childAspectRatio: widget.childAspectRatio,
-                    crossAxisSpacing: widget.crossAxisSpacing,
-                    mainAxisSpacing: widget.mainAxisSpacing),
-                itemBuilder: (BuildContext contexts, int index) {
-                  return GestureDetector(
-                    onTap: isSelecting
-                        ? () {
-                            setState(() {
-                              _itemBins()[index].isSelected =
-                                  !_itemBins()[index].isSelected;
-                              if (_itemBins()[index].isSelected) {
-                                selectedPositions.add(index);
-                              } else {
-                                selectedPositions.remove(index);
-                              }
-                            });
-                            if (widget.onSelectionChanged != null) {
-                              widget.onSelectionChanged(index);
-                            }
+    return Stack(
+      children: <Widget>[
+        GridView.builder(
+            physics: widget.scrollPhysics,
+            scrollDirection: Axis.vertical,
+            controller: scrollController,
+            itemCount: _itemBins().length,
+            gridDelegate: new SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: widget.crossAxisCount,
+                childAspectRatio: widget.childAspectRatio,
+                crossAxisSpacing: widget.crossAxisSpacing,
+                mainAxisSpacing: widget.mainAxisSpacing),
+            itemBuilder: (BuildContext contexts, int index) {
+              return GestureDetector(
+                onTap: isSelecting
+                    ? () {
+                        setState(() {
+                          _itemBins()[index].isSelected =
+                              !_itemBins()[index].isSelected;
+                          if (_itemBins()[index].isSelected) {
+                            selectedPositions.add(index);
+                          } else {
+                            selectedPositions.remove(index);
                           }
-                        : null,
-                    onLongPressStart: (details) {
-                      if (!widget.requireEditToReorder || isSelecting) {
-                        _onLongPressDragStart(index, details);
+                        });
+                        if (widget.onSelectionChanged != null) {
+                          widget.onSelectionChanged(index);
+                        }
                       }
-                    },
-                    onLongPressMoveUpdate: (details) {
-                      if (!widget.requireEditToReorder || isSelecting) {
-                        _onLongPressDragUpdate(index, details);
-                      }
-                    },
-                    onLongPressUp: () {
-                      if (!widget.requireEditToReorder || isSelecting) {
-                        _onLongPressDragUp(index);
-                        dragContainerKey.currentState.clearItem();
-                      }
-                    },
-                    key: _itemBins()[index].containerKey,
-                    child: Container(
+                    : null,
+                onLongPressStart: (details) {
+                  if (!widget.requireEditToReorder || isSelecting) {
+                    _onLongPressDragStart(index, details);
+                  }
+                },
+                onLongPressMoveUpdate: (details) {
+                  if (!widget.requireEditToReorder || isSelecting) {
+                    _onLongPressDragUpdate(index, details);
+                  }
+                },
+                onLongPressUp: () {
+                  if (!widget.requireEditToReorder || isSelecting) {
+                    _onLongPressDragUp(index);
+                    dragContainerKey.currentState.clearItem();
+                  }
+                },
+                key: _itemBins()[index].containerKey,
+                child: Container(
+                  alignment: Alignment.center,
+                  child: OverflowBox(
+                      maxWidth: screenWidth,
+                      maxHeight: screenHeight,
                       alignment: Alignment.center,
-                      child: OverflowBox(
-                          maxWidth: screenWidth,
-                          maxHeight: screenHeight,
-                          alignment: Alignment.center,
-                          child: new Center(
-                            child: new Container(
-                              key: _itemBins()[index].containerKeyChild,
-                              transform: new Matrix4.translationValues(
-                                  _itemBins()[index].dragPointX,
-                                  _itemBins()[index].dragPointY,
-                                  0.0),
-                              child: _itemBins()[index].isDraging
-                                  ? null
-                                  : widget.itemBuilder(context, index),
-                            ),
-                          )),
-                    ),
-                  );
-                }),
-            PlaceholderItem<T>(
-              key: dragContainerKey,
-              itemBins: _itemBins(),
-              itemBuilder: widget.itemBuilder,
-            )
-          ],
-        ));
+                      child: new Center(
+                        child: new Container(
+                          key: _itemBins()[index].containerKeyChild,
+                          transform: new Matrix4.translationValues(
+                              _itemBins()[index].dragPointX,
+                              _itemBins()[index].dragPointY,
+                              0.0),
+                          child: _itemBins()[index].isDraging
+                              ? null
+                              : widget.itemBuilder(context, index),
+                        ),
+                      )),
+                ),
+              );
+            }),
+        PlaceholderItem<T>(
+          key: dragContainerKey,
+          itemBins: _itemBins(),
+          itemBuilder: widget.itemBuilder,
+        )
+      ],
+    );
   }
 
   void _onLongPressDragUp(int index) {
